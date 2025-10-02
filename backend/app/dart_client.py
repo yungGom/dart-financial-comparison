@@ -5,6 +5,7 @@ import requests
 import zipfile
 import io
 import json
+import logging
 from xml.etree import ElementTree as ET
 from typing import Optional, List, Dict, Any
 from pathlib import Path
@@ -12,6 +13,9 @@ from datetime import datetime
 import hashlib
 
 from .config import settings
+
+# Setup logger
+logger = logging.getLogger(__name__)
 
 
 class DartAPIClient:
