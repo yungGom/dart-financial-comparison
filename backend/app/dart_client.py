@@ -57,7 +57,7 @@ class DartAPIClient:
             params = {'crtfc_key': self.api_key}
 
             try:
-                response = requests.get(url, params=params)
+                response = requests.get(url, params=params, timeout=30)
                 response.raise_for_status()
 
                 # Extract zip file
@@ -103,11 +103,18 @@ class DartAPIClient:
         corp_data = self._load_from_cache(cache_key)
 
         if not corp_data:
-            # Try to get corp codes first
-            self.get_corp_code("dummy")  # This will populate the cache
-            corp_data = self._load_from_cache(cache_key)
+            try:
+                # Try to get corp codes first
+                logger.info("캐시가 없습니다. DART API에서 기업 코드 다운로드 중...")
+                self.get_corp_code("dummy")  # This will populate the cache
+                corp_data = self._load_from_cache(cache_key)
+                logger.info("기업 코드 다운로드 완료")
+            except Exception as e:
+                logger.error(f"기업 코드 다운로드 실패: {e}")
+                return []
 
         if not corp_data:
+            logger.warning("캐시 데이터를 로드할 수 없습니다")
             return []
 
         results = []
@@ -119,6 +126,7 @@ class DartAPIClient:
                     'stock_code': corp['stock_code']
                 })
 
+        logger.info(f"검색어 '{query}'에 대해 {len(results)}개 기업 찾음")
         return results[:50]  # Limit to 50 results
 
     def get_financial_statements(
