@@ -1,0 +1,95 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        cd backend
+        pip install -r requirements.txt
+
+    - name: Run tests
+      run: |
+        cd backend
+        pytest tests/ -v --tb=short
+
+    - name: Check code formatting (optional)
+      run: |
+        cd backend
+        pip install black flake8
+        black --check app/
+        flake8 app/ --max-line-length=100 --ignore=E203,W503
+      continue-on-error: true
+
+  test-frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install dependencies
+      run: |
+        cd frontend
+        npm ci || npm install
+
+    - name: Run tests
+      run: |
+        cd frontend
+        npm test -- --passWithNoTests
+
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm run build
+      env:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+
+  deploy:
+    needs: [test-backend, test-frontend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Deploy to Vercel
+      run: |
+        echo "Deployment would happen here"
+        echo "Add Vercel deployment token and commands"
+      # Uncomment and configure when ready:
+      # env:
+      #   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      # run: |
+      #   npm i -g vercel
+      #   cd frontend
+      #   vercel --prod --token=$VERCEL_TOKEN
