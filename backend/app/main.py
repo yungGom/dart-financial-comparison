@@ -45,6 +45,12 @@ async def root():
     }
 
 
+@app.get("/health")
+async def health_check():
+    """Railway 헬스체크 엔드포인트"""
+    return {"status": "healthy"}
+
+
 @app.get("/api/accounts/list")
 async def get_account_list():
     """
