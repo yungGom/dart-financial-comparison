@@ -70,3 +70,20 @@ logs/
 # Cache
 .cache/
 data/cache/
+
+# Test files
+test_*.py
+test_*.xlsx
+analyze_excel.py
+nul
+
+# Batch files
+*.bat
+
+# Documentation (generated)
+EXCEL_EXPORT_REVIEW.md
+FEATURES_SUMMARY.md
+
+# Old backup files
+*_old.tsx
+*_old.py

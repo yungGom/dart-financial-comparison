@@ -22,6 +22,13 @@ const api = axios.create({
 
 export const apiService = {
   /**
+   * Get account list
+   */
+  async getAccountList(): Promise<any> {
+    const response = await api.get('/api/accounts/list');
+    return response.data;
+  },
+  /**
    * Search companies by name
    */
   async searchCompanies(query: string): Promise<Company[]> {
@@ -105,11 +112,17 @@ export const apiService = {
   },
 
   /**
-   * Export to Excel
+   * Export to Excel with enhanced options
    */
-  async exportToExcel(comparisonData: Record<string, any>): Promise<Blob> {
+  async exportToExcel(
+    comparisonData: Record<string, any>,
+    selectedAccounts: string[] = [],
+    includeNotes: boolean = false
+  ): Promise<Blob> {
     const response = await api.post('/api/export/excel', {
-      comparison_data: comparisonData
+      comparison_data: comparisonData,
+      selected_accounts: selectedAccounts,
+      include_notes: includeNotes
     }, {
       responseType: 'blob'
     });

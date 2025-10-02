@@ -13,6 +13,9 @@ from datetime import datetime
 from .config import settings
 from .dart_client import dart_client
 from .calculator import calculator
+from .account_manager import account_manager
+from .excel_generator import excel_generator
+from .note_extractor import note_extractor
 
 # Create FastAPI app
 app = FastAPI(
@@ -39,6 +42,20 @@ async def root():
         "message": "DART Financial Comparison API",
         "version": "1.0.0",
         "timestamp": datetime.now().isoformat()
+    }
+
+
+@app.get("/api/accounts/list")
+async def get_account_list():
+    """
+    계정과목 리스트 조회
+
+    Returns:
+        카테고리별 계정과목 리스트
+    """
+    return {
+        "accounts": account_manager.get_all_accounts(),
+        "categories": account_manager.get_account_categories()
     }
 
 
@@ -172,7 +189,7 @@ async def create_comparison(
     request_data: Dict[str, Any]
 ) -> Dict[str, Any]:
     """
-    기업 재무정보 비교 분석
+    기업 재무정보 비교 분석 (개선된 버전)
 
     Request body:
         {
@@ -181,14 +198,18 @@ async def create_comparison(
                 ...
             ],
             "years": ["2023", "2022", ...],
+            "selected_accounts": ["ifrs-full_Assets", ...],  # 선택된 계정과목
             "include_ratios": true,
-            "include_audit": false
+            "include_notes": true,  # 주석 정보 포함
+            "note_items": ["auditor", "depreciation_policy", ...]  # 추출할 주석 항목
         }
     """
     companies = request_data.get('companies', [])
     years = request_data.get('years', [])
+    selected_accounts = request_data.get('selected_accounts', [])
     include_ratios = request_data.get('include_ratios', True)
-    include_audit = request_data.get('include_audit', False)
+    include_notes = request_data.get('include_notes', False)
+    note_items = request_data.get('note_items', [])
 
     if not companies or not years:
         raise HTTPException(status_code=400, detail="기업과 연도를 선택해주세요.")
@@ -216,13 +237,13 @@ async def create_comparison(
                     ratios = calculator.calculate_all_ratios(statements.get('list', []))
                     comparison_data[key]['ratios'] = ratios
 
-                if include_audit and statements.get('list'):
+                if include_notes and statements.get('list'):
                     rcept_no = statements['list'][0].get('rcept_no')
                     if rcept_no:
                         audit_html = dart_client.get_audit_report(rcept_no)
                         if audit_html:
-                            audit_info = dart_client.extract_audit_info(audit_html)
-                            comparison_data[key]['audit_info'] = audit_info
+                            note_info = note_extractor.extract_comprehensive_notes(audit_html, note_items)
+                            comparison_data[key]['note_info'] = note_info
 
     # Create comparison table
     comparison_df = calculator.create_comparison_table(comparison_data)
@@ -238,39 +259,39 @@ async def export_to_excel(
     request_data: Dict[str, Any]
 ) -> StreamingResponse:
     """
-    재무정보 비교 결과를 Excel 파일로 내보내기
+    재무정보 비교 결과를 Excel 파일로 내보내기 (개선된 버전)
 
     Request body:
         {
             "comparison_data": {...},
-            "include_charts": false
+            "selected_accounts": [...],  # 선택된 계정과목
+            "include_notes": true/false   # 주석 포함 여부
         }
     """
     comparison_data = request_data.get('comparison_data', {})
+    selected_accounts = request_data.get('selected_accounts', [])
+    include_notes = request_data.get('include_notes', False)
 
     if not comparison_data:
         raise HTTPException(status_code=400, detail="내보낼 데이터가 없습니다.")
 
-    # Create Excel file in memory
-    output = io.BytesIO()
-
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        # Summary sheet
-        summary_df = calculator.create_comparison_table(comparison_data)
-        summary_df.to_excel(writer, sheet_name='요약', index=False)
-
-        # Detailed sheets for each company-year
+    # 주석 데이터 추출
+    note_data = {}
+    if include_notes:
         for key, data in comparison_data.items():
-            company_name = data.get('company_name', '')
+            company_name = data.get('company_name', '').strip()  # 공백 제거
             year = data.get('year', '')
-            sheet_name = f"{company_name}_{year}"[:31]  # Excel sheet name limit
+            if 'note_info' in data:
+                if company_name not in note_data:
+                    note_data[company_name] = {}
+                note_data[company_name][year] = data['note_info']
 
-            if 'statements' in data:
-                df = calculator.extract_financial_data(data['statements'])
-                if not df.empty:
-                    df.to_excel(writer, sheet_name=sheet_name, index=False)
-
-    output.seek(0)
+    # Excel 파일 생성 (개선된 excel_generator 사용)
+    output = excel_generator.create_comparison_excel(
+        comparison_data=comparison_data,
+        selected_accounts=selected_accounts,
+        note_data=note_data if include_notes else None
+    )
 
     return StreamingResponse(
         output,
