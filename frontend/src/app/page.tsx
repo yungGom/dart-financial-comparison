@@ -8,17 +8,11 @@ import {
   Button,
   Paper,
   Grid,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  SelectChangeEvent,
   Alert,
   Snackbar,
   CircularProgress,
   FormControlLabel,
   Switch,
-  Divider,
   Stepper,
   Step,
   StepLabel,
@@ -73,11 +67,6 @@ export default function Home() {
     { value: 'useful_life', label: '내용연수' },
     { value: 'significant_policies', label: '주요 회계정책' }
   ];
-
-  const handleYearsChange = (event: SelectChangeEvent<typeof selectedYears>) => {
-    const value = event.target.value;
-    setSelectedYears(typeof value === 'string' ? value.split(',') : value);
-  };
 
   const handleNoteItemToggle = (item: string) => {
     if (selectedNoteItems.includes(item)) {
@@ -247,22 +236,65 @@ export default function Home() {
               <Typography variant="h6" gutterBottom>
                 분석할 연도를 선택하세요
               </Typography>
-              <FormControl fullWidth>
-                <InputLabel>분석 연도</InputLabel>
-                <Select
-                  multiple
-                  value={selectedYears}
-                  onChange={handleYearsChange}
-                  label="분석 연도"
-                  renderValue={(selected) => selected.join(', ')}
-                >
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                비교하실 연도를 선택한 후 다음 버튼을 눌러주세요
+              </Typography>
+
+              <Box sx={{ mt: 3 }}>
+                <Grid container spacing={2}>
                   {yearOptions.map((year) => (
-                    <MenuItem key={year} value={year.toString()}>
-                      {year}년
-                    </MenuItem>
+                    <Grid item xs={6} sm={4} md={3} key={year}>
+                      <Paper
+                        elevation={selectedYears.includes(year.toString()) ? 3 : 1}
+                        sx={{
+                          p: 2,
+                          cursor: 'pointer',
+                          border: selectedYears.includes(year.toString())
+                            ? '2px solid #1976d2'
+                            : '2px solid transparent',
+                          backgroundColor: selectedYears.includes(year.toString())
+                            ? 'rgba(25, 118, 210, 0.08)'
+                            : 'inherit',
+                          transition: 'all 0.2s',
+                          '&:hover': {
+                            backgroundColor: selectedYears.includes(year.toString())
+                              ? 'rgba(25, 118, 210, 0.12)'
+                              : 'rgba(0, 0, 0, 0.04)',
+                            elevation: 2,
+                          }
+                        }}
+                        onClick={() => {
+                          const yearStr = year.toString();
+                          if (selectedYears.includes(yearStr)) {
+                            setSelectedYears(selectedYears.filter(y => y !== yearStr));
+                          } else {
+                            setSelectedYears([...selectedYears, yearStr]);
+                          }
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                            {year}년
+                          </Typography>
+                          <Checkbox
+                            checked={selectedYears.includes(year.toString())}
+                            color="primary"
+                            sx={{ p: 0 }}
+                          />
+                        </Box>
+                      </Paper>
+                    </Grid>
                   ))}
-                </Select>
-              </FormControl>
+                </Grid>
+              </Box>
+
+              {selectedYears.length > 0 && (
+                <Box sx={{ mt: 3, p: 2, bgcolor: 'primary.50', borderRadius: 1, border: '1px solid', borderColor: 'primary.200' }}>
+                  <Typography variant="body2" color="primary.main">
+                    선택된 연도: <strong>{selectedYears.sort((a, b) => parseInt(b) - parseInt(a)).join(', ')}</strong>
+                  </Typography>
+                </Box>
+              )}
             </Box>
           )}
 
