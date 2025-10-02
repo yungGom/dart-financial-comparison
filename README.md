@@ -84,7 +84,7 @@ Vercel을 통한 자동 배포 (main 브랜치 push 시)
 MIT
 
 ## 👨‍💻 개발자
-- GitHub: [your-username]
+- GitHub: [yungGom]
 
 ## 🤝 기여
 Issues와 Pull Requests 환영합니다!
