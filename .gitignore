@@ -32,6 +32,7 @@ yarn-error.log*
 .next/
 out/
 dist/
+tsconfig.tsbuildinfo
 
 # Environment variables
 .env
