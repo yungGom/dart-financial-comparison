@@ -137,7 +137,8 @@ class DartAPIClient:
         self,
         corp_code: str,
         bsns_year: str,
-        reprt_code: str = "11011"
+        reprt_code: str = "11011",
+        fs_div: str = "CFS"
     ) -> Optional[Dict]:
         """
         재무제표 조회
@@ -150,9 +151,12 @@ class DartAPIClient:
                 - 11012: 반기보고서
                 - 11013: 1분기보고서
                 - 11014: 3분기보고서
+            fs_div: 재무제표 구분
+                - CFS: 연결재무제표
+                - OFS: 별도재무제표
         """
         # Create cache key
-        cache_key = f"fs_{corp_code}_{bsns_year}_{reprt_code}"
+        cache_key = f"fs_{corp_code}_{bsns_year}_{reprt_code}_{fs_div}"
         cached_data = self._load_from_cache(cache_key)
         if cached_data:
             return cached_data
@@ -163,7 +167,7 @@ class DartAPIClient:
             'corp_code': corp_code,
             'bsns_year': bsns_year,
             'reprt_code': reprt_code,
-            'fs_div': 'CFS'  # 연결재무제표
+            'fs_div': fs_div  # 연결재무제표(CFS) 또는 별도재무제표(OFS)
         }
 
         try:
@@ -186,10 +190,16 @@ class DartAPIClient:
     def get_multiple_financial_statements(
         self,
         corp_codes: List[str],
-        years: List[str]
+        years: List[str],
+        fs_div: str = "CFS"
     ) -> Dict[str, Dict[str, Any]]:
         """
         여러 기업의 여러 연도 재무제표 조회
+
+        Args:
+            corp_codes: 기업 고유번호 리스트
+            years: 연도 리스트
+            fs_div: 재무제표 구분 (CFS: 연결, OFS: 별도)
 
         Returns:
             {
@@ -202,7 +212,7 @@ class DartAPIClient:
         for corp_code in corp_codes:
             for year in years:
                 key = f"{corp_code}_{year}"
-                data = self.get_financial_statements(corp_code, year)
+                data = self.get_financial_statements(corp_code, year, fs_div=fs_div)
                 if data:
                     results[key] = data
 

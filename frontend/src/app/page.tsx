@@ -24,7 +24,10 @@ import {
   Card,
   CardContent,
   Fade,
-  Slide
+  Slide,
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip
 } from '@mui/material';
 import {
   Download as DownloadIcon,
@@ -37,13 +40,15 @@ import {
   AccountBalance as AccountIcon,
   Settings as SettingsIcon,
   TrendingUp as TrendingUpIcon,
-  CheckCircle as CheckCircleIcon
+  CheckCircle as CheckCircleIcon,
+  AccountTree as AccountTreeIcon,
+  Description as DescriptionIcon
 } from '@mui/icons-material';
 import CompanySearch from '@/components/CompanySearch';
 import AccountSelector from '@/components/AccountSelector';
 import ComparisonTable from '@/components/ComparisonTable';
 import { apiService } from '@/services/api';
-import { Company, ComparisonRequest, ComparisonSummary } from '@/types/financial';
+import { Company, ComparisonRequest, ComparisonSummary, FsDiv } from '@/types/financial';
 
 export default function Home() {
   // 상태 관리
@@ -51,6 +56,7 @@ export default function Home() {
   const [selectedCompanies, setSelectedCompanies] = useState<Company[]>([]);
   const [selectedYears, setSelectedYears] = useState<string[]>([]);
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
+  const [fsDiv, setFsDiv] = useState<FsDiv>('CFS');  // 재무제표 구분 (연결/별도)
   const [includeRatios, setIncludeRatios] = useState(true);
   const [includeNotes, setIncludeNotes] = useState(false);
   const [selectedNoteItems, setSelectedNoteItems] = useState<string[]>(['auditor', 'accounting_standard']);
@@ -130,7 +136,8 @@ export default function Home() {
         selected_accounts: selectedAccounts,
         include_ratios: includeRatios,
         include_notes: includeNotes,
-        note_items: selectedNoteItems
+        note_items: selectedNoteItems,
+        fs_div: fsDiv  // 연결(CFS) 또는 별도(OFS) 재무제표
       };
 
       const response = await apiService.createComparison(request);
@@ -490,10 +497,107 @@ export default function Home() {
                           추가 옵션 설정
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          재무비율과 주석 정보를 선택적으로 포함할 수 있습니다
+                          재무제표 유형과 추가 정보를 선택하세요
                         </Typography>
                       </Box>
                     </Box>
+
+                    {/* 재무제표 구분 선택 */}
+                    <Paper
+                      sx={{
+                        p: 3,
+                        mb: 3,
+                        background: 'linear-gradient(135deg, rgba(102,126,234,0.08) 0%, rgba(118,75,162,0.08) 100%)',
+                        border: '2px solid #667eea',
+                        borderRadius: 3
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                        <DescriptionIcon sx={{ color: '#667eea', mr: 1 }} />
+                        <Typography variant="subtitle1" fontWeight="700" color="#667eea">
+                          재무제표 유형 선택
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        연결재무제표는 자회사를 포함한 그룹 전체의 재무정보를, 별도재무제표는 해당 기업만의 재무정보를 보여줍니다.
+                      </Typography>
+                      <ToggleButtonGroup
+                        value={fsDiv}
+                        exclusive
+                        onChange={(_, newValue) => {
+                          if (newValue !== null) {
+                            setFsDiv(newValue);
+                          }
+                        }}
+                        sx={{
+                          width: '100%',
+                          '& .MuiToggleButton-root': {
+                            flex: 1,
+                            py: 2,
+                            borderRadius: 2,
+                            fontWeight: 600,
+                            fontSize: '1rem',
+                            textTransform: 'none',
+                            border: '2px solid #e0e0e0',
+                            '&.Mui-selected': {
+                              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                              color: 'white',
+                              borderColor: '#667eea',
+                              '&:hover': {
+                                background: 'linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%)',
+                              }
+                            },
+                            '&:hover': {
+                              background: 'rgba(102,126,234,0.1)',
+                            }
+                          }
+                        }}
+                      >
+                        <ToggleButton value="CFS">
+                          <Tooltip title="자회사 포함 그룹 전체 재무정보">
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <AccountTreeIcon />
+                              <Box sx={{ textAlign: 'left' }}>
+                                <Typography variant="body1" fontWeight="700">
+                                  연결재무제표
+                                </Typography>
+                                <Typography variant="caption" sx={{ opacity: 0.8, display: 'block' }}>
+                                  Consolidated (CFS)
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Tooltip>
+                        </ToggleButton>
+                        <ToggleButton value="OFS">
+                          <Tooltip title="해당 기업만의 재무정보">
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <DescriptionIcon />
+                              <Box sx={{ textAlign: 'left' }}>
+                                <Typography variant="body1" fontWeight="700">
+                                  별도재무제표
+                                </Typography>
+                                <Typography variant="caption" sx={{ opacity: 0.8, display: 'block' }}>
+                                  Separate (OFS)
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Tooltip>
+                        </ToggleButton>
+                      </ToggleButtonGroup>
+                      <Alert
+                        severity="info"
+                        sx={{
+                          mt: 2,
+                          borderRadius: 2,
+                          '& .MuiAlert-icon': { alignItems: 'center' }
+                        }}
+                      >
+                        {fsDiv === 'CFS'
+                          ? '연결재무제표: 종속회사를 포함한 연결기준 재무정보입니다. 그룹 전체의 재무상태를 파악할 수 있습니다.'
+                          : '별도재무제표: 해당 법인만의 개별 재무정보입니다. 종속회사 투자금액은 원가로 표시됩니다.'
+                        }
+                      </Alert>
+                    </Paper>
 
                     <Paper sx={{ p: 3, mb: 3, background: '#f8f9fa', borderRadius: 2 }}>
                       <FormGroup>
@@ -594,6 +698,15 @@ export default function Home() {
                           </Box>
                         </Grid>
                         <Grid item xs={12} md={6}>
+                          <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                            <DescriptionIcon sx={{ mr: 2, color: '#667eea' }} />
+                            <Box>
+                              <Typography variant="subtitle2" color="text.secondary">재무제표 유형</Typography>
+                              <Typography variant="body1" fontWeight="600">
+                                {fsDiv === 'CFS' ? '연결재무제표' : '별도재무제표'}
+                              </Typography>
+                            </Box>
+                          </Box>
                           <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
                             <AccountIcon sx={{ mr: 2, color: '#667eea' }} />
                             <Box>
@@ -726,11 +839,23 @@ export default function Home() {
                 boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <AssessmentIcon sx={{ fontSize: 32, color: '#667eea', mr: 2 }} />
-                <Typography variant="h5" fontWeight="700">
-                  비교 분석 결과
-                </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <AssessmentIcon sx={{ fontSize: 32, color: '#667eea', mr: 2 }} />
+                  <Typography variant="h5" fontWeight="700">
+                    비교 분석 결과
+                  </Typography>
+                </Box>
+                <Chip
+                  icon={fsDiv === 'CFS' ? <AccountTreeIcon /> : <DescriptionIcon />}
+                  label={fsDiv === 'CFS' ? '연결재무제표' : '별도재무제표'}
+                  sx={{
+                    fontWeight: 600,
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white',
+                    '& .MuiChip-icon': { color: 'white' }
+                  }}
+                />
               </Box>
               <ComparisonTable data={summaryData} />
             </Paper>

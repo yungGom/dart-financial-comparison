@@ -207,7 +207,8 @@ async def create_comparison(
             "selected_accounts": ["ifrs-full_Assets", ...],  # 선택된 계정과목
             "include_ratios": true,
             "include_notes": true,  # 주석 정보 포함
-            "note_items": ["auditor", "depreciation_policy", ...]  # 추출할 주석 항목
+            "note_items": ["auditor", "depreciation_policy", ...],  # 추출할 주석 항목
+            "fs_div": "CFS"  # 재무제표 구분 (CFS: 연결, OFS: 별도)
         }
     """
     companies = request_data.get('companies', [])
@@ -216,9 +217,14 @@ async def create_comparison(
     include_ratios = request_data.get('include_ratios', True)
     include_notes = request_data.get('include_notes', False)
     note_items = request_data.get('note_items', [])
+    fs_div = request_data.get('fs_div', 'CFS')  # 기본값: 연결재무제표
 
     if not companies or not years:
         raise HTTPException(status_code=400, detail="기업과 연도를 선택해주세요.")
+
+    # fs_div 유효성 검사
+    if fs_div not in ['CFS', 'OFS']:
+        raise HTTPException(status_code=400, detail="fs_div는 'CFS'(연결) 또는 'OFS'(별도)만 가능합니다.")
 
     comparison_data = {}
 
@@ -229,14 +235,16 @@ async def create_comparison(
 
         for year in years:
             key = f"{corp_code}_{year}"
-            statements = dart_client.get_financial_statements(corp_code, year)
+            statements = dart_client.get_financial_statements(corp_code, year, fs_div=fs_div)
 
             if statements:
                 comparison_data[key] = {
                     'statements': statements.get('list', []),
                     'company_name': company_name,
                     'year': year,
-                    'corp_code': corp_code
+                    'corp_code': corp_code,
+                    'fs_div': fs_div,  # 연결(CFS) 또는 별도(OFS)
+                    'fs_div_name': '연결재무제표' if fs_div == 'CFS' else '별도재무제표'
                 }
 
                 if include_ratios:

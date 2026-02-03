@@ -2,6 +2,9 @@
  * Financial data types
  */
 
+// 재무제표 구분 타입
+export type FsDiv = 'CFS' | 'OFS';
+
 export interface Company {
   name: string;
   corp_code: string;
@@ -48,6 +51,8 @@ export interface ComparisonData {
   statements?: FinancialStatement[];
   ratios?: FinancialRatios;
   audit_info?: AuditInfo;
+  fs_div?: FsDiv;  // 재무제표 구분
+  fs_div_name?: string;  // 재무제표 구분 이름 (연결재무제표/별도재무제표)
 }
 
 export interface ComparisonRequest {
@@ -55,6 +60,10 @@ export interface ComparisonRequest {
   years: string[];
   include_ratios: boolean;
   include_audit: boolean;
+  include_notes?: boolean;
+  note_items?: string[];
+  selected_accounts?: string[];
+  fs_div?: FsDiv;  // 연결(CFS) 또는 별도(OFS) 재무제표
 }
 
 export interface ComparisonSummary {
