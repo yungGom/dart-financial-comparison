@@ -11,7 +11,8 @@ import {
   ComparisonSummary
 } from '@/types/financial';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// Vercel에서는 같은 도메인이므로 상대 경로 사용
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 const api = axios.create({
   baseURL: API_URL,

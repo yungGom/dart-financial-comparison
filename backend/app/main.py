@@ -27,7 +27,12 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_url, "http://localhost:3000", "*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://dart-financial-comparison.vercel.app",
+        "https://dart-financial-comparison-git-main-yongs-projects-97da4cb1.vercel.app",
+        "https://dart-financial-comparison-lxqqpw8ig-yongs-projects-97da4cb1.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
