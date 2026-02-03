@@ -9,7 +9,8 @@ from pathlib import Path
 backend_dir = Path(__file__).parent.parent / "backend"
 sys.path.insert(0, str(backend_dir))
 
+from mangum import Mangum
 from app.main import app
 
-# Vercel은 이 app 객체를 찾아서 실행합니다
-handler = app
+# Vercel Serverless Handler
+handler = Mangum(app, lifespan="off")
