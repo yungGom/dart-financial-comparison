@@ -11,6 +11,9 @@ from dotenv import load_dotenv
 env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(env_path)
 
+# Vercel 서버리스 환경 감지
+IS_VERCEL = os.getenv("VERCEL", "") == "1"
+
 class Settings(BaseSettings):
     """Application settings"""
 
@@ -25,8 +28,8 @@ class Settings(BaseSettings):
     # CORS Configuration
     frontend_url: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
-    # Cache Configuration
-    cache_dir: Path = Path(__file__).parent.parent.parent / "data" / "cache"
+    # Cache Configuration - Vercel은 /tmp만 쓰기 가능
+    cache_dir: Path = Path("/tmp/dart_cache") if IS_VERCEL else Path(__file__).parent.parent.parent / "data" / "cache"
     cache_ttl: int = 3600  # 1 hour in seconds
 
     # Data Configuration
@@ -40,5 +43,9 @@ class Settings(BaseSettings):
 # Create settings instance
 settings = Settings()
 
-# Create cache directory if it doesn't exist
-settings.cache_dir.mkdir(parents=True, exist_ok=True)
+# Create cache directory if it doesn't exist (safe for both local and Vercel)
+try:
+    settings.cache_dir.mkdir(parents=True, exist_ok=True)
+except OSError:
+    # Vercel 환경에서 실패하면 무시 (캐시 없이 동작)
+    pass
