@@ -9,8 +9,7 @@ from pathlib import Path
 backend_dir = Path(__file__).parent.parent / "backend"
 sys.path.insert(0, str(backend_dir))
 
-from mangum import Mangum
 from app.main import app
 
-# Vercel Serverless Handler
-handler = Mangum(app, lifespan="off")
+# Vercel Python Runtime은 ASGI app을 직접 지원
+handler = app
